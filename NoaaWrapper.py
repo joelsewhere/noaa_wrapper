@@ -14,7 +14,7 @@ class Noaa(object):
 
 
 
-    def _collect_all(self, url, params = None, sleep=1, df = False):
+    def _collect(self, url, params = None, collect_all=False, sleep=1, df = False):
         """
                                     Collect all observations.
         --------------------------------------------------------------------------------
@@ -48,45 +48,38 @@ class Noaa(object):
         --------------------------------------------------------------------------------
         """
 
-        call = req.get(url, headers = self._header, params = params).json()
         
-        total = call['metadata']['resultset']['count']
-        limit = call['metadata']['resultset']['limit']
-        params['offset'] = call['metadata']['resultset']['offset']
-        
-        cur = 0
-        data = []
-        self._printProgressBar(cur, total, prefix = f'{cur}/{total}', suffix = 'Complete', length = 50)
-        while cur < total:
-            params['offset'] = cur
-            query = req.get(url, params = params, headers = self._header)
-            data += query.json()['results']
-            tm.sleep(sleep)
-            cur += limit
-            if cur > total:
-                cur = total
-            self._printProgressBar(cur, total, 
-                                prefix = f'{cur}/{total}', 
-                                suffix = 'Complete', length = 50)
+
+        if collect_all:
+
+            call = req.get(url, headers = self._header, params = params).json()
+            total = call['metadata']['resultset']['count']
+            limit = call['metadata']['resultset']['limit']
+            params['offset'] = call['metadata']['resultset']['offset']
+            
+            cur = 0
+            data = []
+            self._printProgressBar(cur, total, prefix = f'{cur}/{total}', suffix = 'Complete', length = 50)
+            while cur < total:
+                params['offset'] = cur
+                query = req.get(url, params = params, headers = self._header)
+                data += query.json()['results']
+                tm.sleep(sleep)
+                cur += limit
+                if cur > total:
+                    cur = total
+                self._printProgressBar(cur, total, 
+                                    prefix = f'{cur}/{total}', 
+                                    suffix = 'Complete', length = 50)
+        else:
+            data = req.get(url,headers=self._header, params=params)\
+                      .json()['results']
         if df:
             data = pd.DataFrame(data)
             data.reset_index(inplace = True, drop = True)
-
-        return data
-
-    def _collect(self, url, params, sleep=1, df=False, collect_all=False):
-
-        if collect_all:
-            data =  self._collect_all(url, params, sleep=sleep, df = df)
-            return data
-
-        else:
-            data = req.get(url,headers=self._header, params=params).json()
-        if df:
-            data= pd.DataFrame(data['results'])
-        return data       
         
-
+        return data    
+        
     def datasets(self, dataset_id = None, datatype_id = None, 
                 location_id = None, station_id = None, 
                 start_date = None, end_date = None, 
@@ -169,7 +162,7 @@ class Noaa(object):
                     offset = offset)
             
         
-        return self._collect(url, params, sleep=sleep, df=df, collect_all=collect_all)
+        return self._collect(url, params, collect_all=collect_all, sleep=sleep, df=df)
             
 
     def data_category(self, data_category_id = None, 
@@ -254,7 +247,7 @@ class Noaa(object):
                 limit = limit,
                 offset = offset)
 
-        return self._collect(url, params, sleep=sleep, df=df, collect_all=collect_all)
+        return self._collect(url, params, collect_all=collect_all, sleep=sleep, df=df)
 
     def data_types(self, datatype_id = None, dataset_id = None, 
                 location_id = None, station_id = None, 
@@ -347,7 +340,7 @@ class Noaa(object):
                     offset = offset)
 
         
-        return self._collect(url, params, sleep=sleep, df=df, collect_all=collect_all)
+        return self._collect(url, params, collect_all=collect_all, sleep=sleep, df=df)
 
     def location_categories(self, location_category = None, 
                             dataset_id = None, start_date = None,
@@ -417,7 +410,7 @@ class Noaa(object):
                             offset = offset
         )
 
-        return self._collect(url, params, sleep=sleep, df=df, collect_all=collect_all)
+        return self._collect(url, params, collect_all=collect_all, sleep=sleep, df=df)
 
     def locations(self, location_id = None, dataset_id = None,
                   location_category_id = None, data_category_id = None,
@@ -495,7 +488,7 @@ class Noaa(object):
                  sortorder = sort_order, limit = limit,
                  offset = offset)
 
-        return self._collect(url, params, sleep=sleep, df=df, collect_all=collect_all)
+        return self._collect(url, params, collect_all=collect_all, sleep=sleep, df=df)
 
     
     def stations(self, station_id = None, dataset_id = None, location_id = None,
@@ -578,7 +571,7 @@ class Noaa(object):
                       extent = extent, sortfield = sort_field, limit = limit,
                       offset = offset)
 
-        return self._collect(url, params, sleep=sleep, df=df, collect_all=collect_all)
+        return self._collect(url, params, collect_all=collect_all, sleep=sleep, df=df)
 
     def data(self, dataset_id, start_date, end_date, datatype_id = None, 
          location_id = None, station_id = None, units = None, 
@@ -664,7 +657,7 @@ class Noaa(object):
                     enddate = end_date, units = units, sortfield = sort_field,
                     limit = limit, offset = offset, includemetadata = include_metadata)
 
-        return self._collect(url, params, sleep=sleep, df=df, collect_all=collect_all)
+        return self._collect(url, params, collect_all=collect_all, sleep=sleep, df=df)
 
 
     def _printProgressBar (self, iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
